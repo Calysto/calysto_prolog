@@ -8,8 +8,6 @@
 # Copyleft 2009 Chris Meyers
 
 import sys, copy, re
-from jupyter_kernel import MagicKernel
-from IPython.display import HTML
 
 uppercase= 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 infixOps = ("*is*","==","<",">","+","-","*","/")
@@ -148,15 +146,15 @@ def unify (src, srcEnv, dest, destEnv) :
     if src.pred == '_' or dest.pred == '_' : return sts(1,"Wildcard")
 
     if isVariable(src) :
-        srcVal = eval(src, srcEnv)
+        srcVal = peval(src, srcEnv)
         if not srcVal : return sts(1,"Src unset")
         else : return sts(unify(srcVal,srcEnv,dest,destEnv), "Unify to Src Value")
 
     if isVariable(dest) :
-        destVal = eval(dest, destEnv)           # evaluate destination
+        destVal = peval(dest, destEnv)           # evaluate destination
         if destVal : return sts(unify(src,srcEnv,destVal,destEnv),"Unify to Dest value")
         else :
-            destEnv[dest.pred] = eval(src,srcEnv)
+            destEnv[dest.pred] = peval(src,srcEnv)
             return sts(1,"Dest updated 1")      # unifies. destination updated
 
     elif src.pred      != dest.pred      : return sts(0,"Diff predicates")
@@ -203,15 +201,15 @@ def search (term) :
         pred = term.pred                    # Special term?
         if pred in ['*is*', 'cut','fail','<','=='] :
             if pred == '*is*' :
-                ques = eval(term.args[0],c.env)
-                ans  = eval(term.args[1],c.env)
+                ques = peval(term.args[0],c.env)
+                ans  = peval(term.args[1],c.env)
                 if ques == None :
                     c.env[term.args[0].pred] = ans  # Set variable
                 elif ques.pred != ans.pred :
                     continue                # Mismatch, fail
             elif pred == 'cut' : queue = [] # Zap the competition
             elif pred == 'fail': continue   # Dont succeed
-            elif not eval(term,c.env) : continue # Fail if not true
+            elif not peval(term,c.env) : continue # Fail if not true
             c.inx = c.inx + 1               # Succeed. resume self.
             queue.insert(0,c)
             continue
@@ -225,7 +223,7 @@ def search (term) :
                 queue.insert(0,child)
                 if trace : Print("Queue", child)
 
-def eval (term, env) :      # eval all variables within a term to constants
+def peval (term, env) :      # eval all variables within a term to constants
     special = operators.get(term.pred)
     if special :
         return special(eval(term.args[0],env),eval(term.args[1],env))
@@ -241,102 +239,3 @@ def eval (term, env) :      # eval all variables within a term to constants
         args.append(a)
     return Term(term.pred, args)
 
-class PrologKernel(MagicKernel):
-    implementation = 'Prolog'
-    implementation_version = '1.0'
-    language = 'prolog'
-    language_version = '0.1'
-    banner = "Prolog kernel - evaluates Prolog programs"
-    search = None
-
-    magic_suffixes = {}
-
-    def get_usage(self):
-        return """This is the Prolog kernel.
-
-Example Rules:
-    child(stephanie).
-    child(thad).
-    mother_child(trude, sally).
- 
-    father_child(tom, sally).
-    father_child(tom, erica).
-    father_child(mike, tom).
- 
-    sibling(X, Y)      :- parent_child(Z, X), parent_child(Z, Y).
- 
-    parent_child(X, Y) :- father_child(X, Y).
-    parent_child(X, Y) :- mother_child(X, Y).
-
-Example Queries:
-    child(NAME)?
-    sibling(sally, erica)?
-    father_child(Father, Child)?
-"""
-
-    def do_execute_direct(self, code):
-        global print_function
-        print_function = self.Print
-        result = None
-        for line in code.strip().split("\n"):
-            if line:
-                result = self.do_execute_line(line.strip())
-        return result
-
-    def do_execute_line(self, sent):
-        global trace
-        s = re.sub("#.*", "", sent) # clip comments
-        s = re.sub(" is ", "*is*", s)    # protect "is" operator
-        s = re.sub(" ",  "", s)           # remove spaces
-        if s == "" : 
-            return
-
-        if s[-1] in '?.' : 
-            punc=s[-1]; s=s[:-1]
-        else             : 
-            punc='.'
-
-        if   s == 'trace=0' : trace = 0
-        elif s == 'trace=1' : trace = 1
-        elif s == 'dump'  :
-            self.Print("Database rules:")
-            for rule in rules : 
-                self.Print("    " + str(rule))
-        elif s in ["cont", "continue"]:
-            return self.continue_search()
-        elif punc == '?' : 
-            self.search = search(Term(s))
-            return self.continue_search()
-        else             : 
-            rules.append(Rule(s))
-            self.Print("Rule added to database.")
-
-    def continue_search(self):
-        if self.search:
-            try:
-                result = self.search.next()
-                if result:
-                    self.Print("Use 'continue' for more results.")
-            except StopIteration:
-                result = None
-                self.Print("No more results.")
-            return result
-        else:
-            self.Error("Ask a question first.")
-
-    def get_completions(self, info):
-        token = info["code"]
-        keywords = ["cont", "continue", "dump", "is", "trace=0", "trace=1", "cut", "fail"]
-        return [word for word in keywords if word.startswith(token)]
-
-    def get_kernel_help_on(self, info, level=0, none_on_fail=False):
-        expr = info["code"]
-        if none_on_fail:
-            return None
-        else:
-            return "Sorry, no available help for '%s'" % expr
-
-
-if __name__ == '__main__': 
-    from IPython.kernel.zmq.kernelapp import IPKernelApp 
-    IPKernelApp.launch_instance(kernel_class=PrologKernel) 
