@@ -58,13 +58,13 @@ class Term :
             self.pred = s
             self.args = args
         elif parts :
-            self.args = map(Term,parts[1])
+            self.args = list(map(Term,parts[1]))
             self.pred = parts[0]
         elif s[-1] == ']' :  # Build list "term"
             flds = split(s[1:-1],",")
             fld2 = split(s[1:-1],"|")
             if len(fld2) > 1 :
-                self.args = map(Term,fld2)
+                self.args = list(map(Term,fld2))
                 self.pred = '.'
             else :
                 flds.reverse()
@@ -74,7 +74,7 @@ class Term :
         elif s[-1] == ')' :               # Compile from "pred(a,b,c)" string
             flds = split(s,'(',All=0)
             if len(flds) != 2 : fatal("Syntax error in term: %s" % [s])
-            self.args = map(Term,split(flds[1][:-1],','))
+            self.args = list(map(Term,split(flds[1][:-1],',')))
             self.pred = flds[0]
         else : 
             self.pred = s           # Simple constant or variable

@@ -43,8 +43,7 @@ Example Queries:
 """
 
     def do_execute_direct(self, code):
-        global print_function
-        print_function = self.Print
+        prolog.print_function = self.Print
         result = None
         for line in code.strip().split("\n"):
             if line:
@@ -52,7 +51,6 @@ Example Queries:
         return result
 
     def do_execute_line(self, sent):
-        global trace
         s = re.sub("#.*", "", sent) # clip comments
         s = re.sub(" is ", "*is*", s)    # protect "is" operator
         s = re.sub(" ",  "", s)           # remove spaces
@@ -64,27 +62,33 @@ Example Queries:
         else             : 
             punc='.'
 
-        if   s == 'trace=0' : trace = 0
-        elif s == 'trace=1' : trace = 1
-        elif s == 'dump'  :
+        if   s == '%untrace' : prolog.trace = 0
+        elif s == '%trace' : prolog.trace = 1
+        elif s == '%dump'  :
             self.Print("Database rules:")
             for rule in prolog.rules : 
                 self.Print("    " + str(rule))
-        elif s in ["cont", "continue"]:
+        elif s in ["%cont", "%continue"]:
             return self.continue_search()
         elif punc == '?' : 
-            self.search = prolog.search(prolog.Term(s))
-            return self.continue_search()
+            try:
+                self.search = prolog.search(prolog.Term(s))
+                return self.continue_search()
+            except:
+                self.Error("Unable to process query. Please restate.")
         else             : 
-            prolog.rules.append(prolog.Rule(s))
-            self.Print("Rule added to database.")
+            try:
+                prolog.rules.append(prolog.Rule(s))
+                self.Print("Rule added to database.")
+            except:
+                self.Error("Unable to process statement. Please restate.")
 
     def continue_search(self):
         if self.search:
             try:
                 result = next(self.search)
                 if result:
-                    self.Print("Use 'continue' for more results.")
+                    self.Print("Use '%continue' for more results.")
             except StopIteration:
                 result = None
                 self.Print("No more results.")
@@ -94,7 +98,7 @@ Example Queries:
 
     def get_completions(self, info):
         token = info["help_obj"]
-        keywords = ["cont", "continue", "dump", "is", "trace=0", "trace=1", "cut", "fail"]
+        keywords = ["%cont", "%continue", "%dump", "is", "%untrace", "%trace", "cut", "fail"]
         return [word for word in keywords if word.startswith(token)]
 
     def get_kernel_help_on(self, info, level=0, none_on_fail=False):
