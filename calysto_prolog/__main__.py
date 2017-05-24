@@ -1,3 +1,4 @@
-from IPython.kernel.zmq.kernelapp import IPKernelApp
-from .kernel import PrologKernel
-IPKernelApp.launch_instance(kernel_class=PrologKernel)
+from calysto_prolog.kernel import PrologKernel
+
+if __name__ == "__main__":
+    PrologKernel.run_as_main()
