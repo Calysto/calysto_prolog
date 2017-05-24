@@ -1,45 +1,10 @@
-from distutils.command.install import install
-from distutils.core import setup
-from distutils import log
-import os
-import json
 import sys
+import io
 
-kernel_json = {
-    "argv": [sys.executable, 
-	     "-m", "calysto_prolog", 
-	     "-f", "{connection_file}"],
-    "display_name": "Calysto Prolog",
-    "language": "prolog",
-    "name": "calysto_prolog"
-}
+from setuptools import find_packages, setup
 
-class install_with_kernelspec(install):
-    def run(self):
-        install.run(self)
-        from IPython.kernel.kernelspec import install_kernel_spec
-        from IPython.utils.tempdir import TemporaryDirectory
-        from metakernel.utils.kernel import install_kernel_resources
-        with TemporaryDirectory() as td:
-            os.chmod(td, 0o755) # Starts off as 700, not user readable
-            with open(os.path.join(td, 'kernel.json'), 'w') as f:
-                json.dump(kernel_json, f, sort_keys=True)
-            install_kernel_resources(td, resource="calysto_prolog")
-            log.info('Installing kernel spec')
-            try:
-                install_kernel_spec(td, 'calysto_prolog', replace=True)
-            except:
-                install_kernel_spec(td, 'calysto_prolog', user=self.user, replace=True)
-
-
-svem_flag = '--single-version-externally-managed'
-if svem_flag in sys.argv:
-    # Die, setuptools, die.
-    sys.argv.remove(svem_flag)
-
-with open('calysto_prolog/__init__.py', 'rb') as fid:
+with io.open('calysto_prolog/__init__.py', encoding="utf-8") as fid:
     for line in fid:
-        line = line.decode('utf-8')
         if line.startswith('__version__'):
             __version__ = line.strip().split()[-1][1:-1]
             break
@@ -54,9 +19,9 @@ setup(name='calysto_prolog',
       url="https://github.com/Calysto/calysto_prolog",
       author='Douglas Blank',
       author_email='doug.blank@gmail.com',
-      packages=['calysto_prolog'],
+      packages=find_packages(include=['calysto_prolog', 'calysto_prolog.*'],),
+      package_data={'calysto_prolog': ["images/*.png"]},
       install_requires=["metakernel"],
-      cmdclass={'install': install_with_kernelspec},
       classifiers = [
           'Framework :: IPython',
           'License :: OSI Approved :: BSD License',

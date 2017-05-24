@@ -16,6 +16,15 @@ class PrologKernel(MetaKernel):
         'pygments_lexer': 'prolog',
     }
 
+    kernel_json = {
+        "argv": [sys.executable, 
+                 "-m", "calysto_prolog", 
+                 "-f", "{connection_file}"],
+        "display_name": "Calysto Prolog",
+        "language": "prolog",
+        "codemirror_mode": "prolog",
+        "name": "calysto_prolog"
+    }
     magic_prefixes = dict(magic='%', shell='!', help='?')
     help_suffix = None
 

@@ -2,29 +2,64 @@
 
 Because **Calysto Prolog** uses [MetaKernel](https://github.com/Calysto/metakernel/blob/master/README.rst), it has a fully-supported set of "magics"---meta-commands for additional functionality. See all of the [MetaKernel Magics](https://github.com/Calysto/metakernel/blob/master/metakernel/magics/README.md).
 
-You can install Calysto Prolog:
+## Installation
+
+You can install Calysto Prolog in two steps:
 
 ```
-pip3 install --upgrade calysto-prolog
+pip3 install --upgrade calysto_prolog
 ```
 
-or in the system kernel folder with:
+OR in the system kernel folder with:
 
 ```
-sudo pip3 install --upgrade calysto-prolog
+sudo pip3 install --upgrade calysto_prolog
 ```
 
-Use it in the console, qtconsole, or notebook with IPython 3:
+Then, you need to install the kernelspec:
 
 ```
-ipython console --kernel calysto_prolog
-ipython qtconsole --kernel calysto_prolog
-ipython notebook --kernel calysto_prolog
+python3 -m calysto_prolog install
 ```
 
-Requires:
+Add `--user` to the above commands to put in your private environment.
 
-* ipython-3.0
+## Use
+
+Use Calysto Prolog in the console, qtconsole, or notebook:
+
+```
+jupyter console --kernel calysto_prolog
+jupyter qtconsole --kernel calysto_prolog
+jupyter notebook --kernel calysto_prolog
+```
+
+### Example Facts
+```
+    child(stephanie).
+    child(thad).
+    mother_child(trude, sally).
+ 
+    father_child(tom, sally).
+    father_child(tom, erica).
+    father_child(mike, tom).
+ 
+    sibling(X, Y)      :- parent_child(Z, X), parent_child(Z, Y).
+ 
+    parent_child(X, Y) :- father_child(X, Y).
+    parent_child(X, Y) :- mother_child(X, Y).
+```
+
+### Example Queries
+```
+    child(NAME)?
+    sibling(sally, erica)?
+    father_child(Father, Child)?
+```
+
+## Requires
+
+* Jupyter
 * Python2 or Python3
 * metakernel (installed automatically)
 
